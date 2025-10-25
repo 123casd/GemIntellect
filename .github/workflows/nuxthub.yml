@@ -1,19 +1,26 @@
 name: Deploy to NuxtHub
-on: push
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: nuxthub-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    name: "Deploy to NuxtHub"
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
-
     steps:
       - uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -21,13 +28,15 @@ jobs:
           node-version: 22
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install
+      - name: Install dependencies (no scripts)
+        run: pnpm install --ignore-scripts
+        env:
+          npm_config_ignore_scripts: 'true'
 
       - name: Ensure NuxtHub module is installed
-        run: pnpx nuxthub@latest ensure
+        run: pnpm dlx nuxthub@latest ensure
 
       - name: Build & Deploy to NuxtHub
         uses: nuxt-hub/action@v2
         with:
-          project-key: gem-intellect-l2hb
+          project-key: <your-project-key>
